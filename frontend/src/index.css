@@ -1,0 +1,134 @@
+@import "tailwindcss";
+
+/* Bảng màu giống bản mẫu đã duyệt: nền xám pha xanh lá, màu nhấn xanh lục thông; tự đổi theo chế độ tối của máy. */
+:root {
+  --paper: #f6f8f7;
+  --surface: #ffffff;
+  --ink: #17302d;
+  --muted: #5d716e;
+  --line: #d9e3e0;
+  --pine: #1d6b62;
+  --pine-soft: #e3f0ed;
+  --user: #eef3f2;
+  --danger: #b42318;
+  --danger-soft: #fdecea;
+  --warn: #9a5b00;
+  --warn-soft: #fdf3e1;
+  --ok: #2f7d32;
+  --ok-soft: #e8f4e8;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper: #0f1716;
+    --surface: #16211f;
+    --ink: #e4eeeb;
+    --muted: #9db1ad;
+    --line: #2a3a37;
+    --pine: #5fbfb1;
+    --pine-soft: #1c3431;
+    --user: #1d2a28;
+    --danger: #ff8a7a;
+    --danger-soft: #3a1c19;
+    --warn: #f0b75c;
+    --warn-soft: #362a14;
+    --ok: #8fd18f;
+    --ok-soft: #1b3020;
+    color-scheme: dark;
+  }
+}
+
+@theme inline {
+  --color-paper: var(--paper);
+  --color-surface: var(--surface);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-pine: var(--pine);
+  --color-pine-soft: var(--pine-soft);
+  --color-user: var(--user);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-warn: var(--warn);
+  --color-warn-soft: var(--warn-soft);
+  --color-ok: var(--ok);
+  --color-ok-soft: var(--ok-soft);
+  --font-sans: "Be Vietnam Pro", "Segoe UI", system-ui, sans-serif;
+  --font-serif: "Noto Serif", Georgia, serif;
+  --font-mono: "JetBrains Mono", Consolas, monospace;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-size: 15px;
+  line-height: 1.55;
+}
+button {
+  cursor: pointer;
+}
+button:disabled {
+  cursor: default;
+}
+:focus-visible {
+  outline: 2px solid var(--pine);
+  outline-offset: 2px;
+}
+dialog::backdrop {
+  background: rgb(15 23 22 / 0.45);
+}
+
+/* nội dung câu trả lời (markdown) */
+.answer p {
+  margin: 0;
+}
+.answer > * + * {
+  margin-top: 0.5rem;
+}
+.answer ul,
+.answer ol {
+  padding-left: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+.answer ul {
+  list-style: disc;
+}
+.answer ol {
+  list-style: decimal;
+}
+.answer h1,
+.answer h2,
+.answer h3 {
+  font-weight: 600;
+  font-size: 1rem;
+}
+.answer strong {
+  font-weight: 600;
+}
+
+@keyframes dot {
+  0%, 80%, 100% { opacity: 0.25; }
+  40% { opacity: 1; }
+}
+.typing span {
+  animation: dot 1.2s infinite;
+}
+.typing span:nth-child(2) {
+  animation-delay: 0.15s;
+}
+.typing span:nth-child(3) {
+  animation-delay: 0.3s;
+}
+@media (prefers-reduced-motion: reduce) {
+  .typing span {
+    animation: none;
+  }
+}

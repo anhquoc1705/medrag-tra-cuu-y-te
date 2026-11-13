@@ -1,0 +1,41 @@
+@startuml 00-luong-xu-ly-cau-hoi
+skinparam defaultFontName "Times New Roman"
+skinparam defaultFontSize 14
+skinparam shadowing false
+skinparam monochrome true
+
+start
+:Nhận câu hỏi (POST /chat);
+note right
+  Mọi kết quả, kể cả bị chặn / từ chối,
+  đều được ghi nhật ký vào PostgreSQL
+end note
+:Dịch câu hỏi sang tiếng Anh\n(dùng thêm cho BM25);
+partition "G1 – Kiểm soát đầu vào" {
+  :Từ khoá cấp cứu + LLM phân loại\n+ Llama Prompt Guard 2;
+}
+if (Cấp cứu / ngoài phạm vi /\nđòi chẩn đoán, kê đơn / lách quy tắc?) then (có)
+  :Chặn: cảnh báo cấp cứu 115\nhoặc từ chối lịch sự;
+  stop
+endif
+:Hybrid Search: BM25 (Elasticsearch)\n+ vector bge-m3 (Milvus) → RRF → top-k đoạn;
+partition "G2 – Kiểm tra bằng chứng" {
+  if (Điểm cosine cao nhất < 0,5?) then (có)
+    :"Không đủ dữ liệu an toàn để tư vấn";
+    stop
+  endif
+}
+repeat
+  :LLM sinh câu trả lời có trích dẫn [n];
+  partition "G3 – Kiểm tra chéo đầu ra" {
+    :Tách ý → LLM khác (Llama 3.3) đối chiếu\ntừng ý với đoạn trích → Faithfulness;
+  }
+repeat while (Faithfulness < 0,8 và còn lượt sinh lại (tối đa 2)?) is (sinh lại kèm danh sách ý sai)
+if (Faithfulness ≥ 0,8?) then (đạt)
+  :Trả câu trả lời + nguồn trích dẫn\n+ lời khuyến cáo;
+else (không đạt)
+  :Từ chối an toàn;
+endif
+:Ghi nhật ký (PostgreSQL);
+stop
+@enduml

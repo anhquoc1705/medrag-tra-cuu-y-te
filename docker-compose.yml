@@ -1,0 +1,88 @@
+# Hạ tầng: Elasticsearch (BM25) + Milvus Standalone (vector) + PostgreSQL (dữ liệu ứng dụng) + Backend FastAPI
+# Chạy:  docker compose up -d      Dừng:  docker compose down
+
+services:
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.15.0
+    container_name: medrag-es
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - ES_JAVA_OPTS=-Xms1g -Xmx1g
+    ports:
+      - "9200:9200"
+    volumes:
+      - es_data:/usr/share/elasticsearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s http://localhost:9200/_cluster/health | grep -vq '\"status\":\"red\"'"]
+      interval: 15s
+      timeout: 10s
+      retries: 20
+
+  # Milvus Standalone chế độ embedded: etcd chạy nhúng bên trong, dữ liệu ghi thẳng ra đĩa (không cần MinIO)
+  milvus:
+    image: milvusdb/milvus:v2.5.27
+    container_name: medrag-milvus
+    command: ["milvus", "run", "standalone"]
+    security_opt:
+      - seccomp:unconfined
+    environment:
+      ETCD_USE_EMBED: "true"
+      ETCD_DATA_DIR: /var/lib/milvus/etcd
+      ETCD_CONFIG_PATH: /milvus/configs/embedEtcd.yaml
+      COMMON_STORAGETYPE: local
+    ports:
+      - "19530:19530"
+      - "9091:9091"
+    volumes:
+      - milvus_data:/var/lib/milvus
+      - ./milvus/embedEtcd.yaml:/milvus/configs/embedEtcd.yaml:ro
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9091/healthz"]
+      interval: 30s
+      timeout: 20s
+      start_period: 90s
+      retries: 3
+
+  postgres:
+    image: postgres:16
+    container_name: medrag-postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-medrag}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-medrag}
+      POSTGRES_DB: ${POSTGRES_DB:-medrag}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-medrag}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  # Backend FastAPI. Trong mạng Docker, các kho được gọi bằng tên service (elasticsearch, milvus, postgres)
+  backend:
+    build: ./backend
+    container_name: medrag-backend
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      ES_URL: http://elasticsearch:9200
+      MILVUS_URI: http://milvus:19530
+      DATABASE_URL: postgresql://${POSTGRES_USER:-medrag}:${POSTGRES_PASSWORD:-medrag}@postgres:5432/${POSTGRES_DB:-medrag}
+    ports:
+      - "8000:8000"
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+      milvus:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+
+volumes:
+  es_data:
+  milvus_data:
+  pg_data:

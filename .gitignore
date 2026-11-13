@@ -1,0 +1,38 @@
+# Bí mật
+.env
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Node
+node_modules/
+dist/
+*.tsbuildinfo
+
+# Dữ liệu lớn / sinh ra (giữ lại catalog và câu hỏi đánh giá)
+data/raw/**/*.pdf
+data/processed/
+eval/results/
+
+# Office lock files
+~$*
+
+# Công cụ hỗ trợ (Claude Code + graphify) – không phải sản phẩm đồ án, không đưa lên GitHub
+.claude/
+CLAUDE.md
+graphify-out/
+.graphifyignore
+skill/
+
+# Tài liệu cá nhân / tham khảo (có thông tin liên hệ SV và GVHD) + nhật ký làm việc
+*.docx
+*.doc
+PROGRESS.md
+docs/nhat-ky-ky-thuat.md
+
+# Tài liệu gốc tải về (tái tạo bằng pipeline/download.py)
+data/raw/**/*.html
+data/raw/**/*.xml

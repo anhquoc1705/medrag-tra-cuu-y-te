@@ -1,0 +1,15 @@
+requests>=2.32
+pypdf>=6.0
+beautifulsoup4>=4.12
+lxml>=5.0
+python-dotenv>=1.0
+
+# Lập chỉ mục (client phải khớp phiên bản server trong docker-compose.yml)
+elasticsearch>=8.15,<9
+pymilvus>=2.5,<2.6
+# torch bản CPU: pip install torch --index-url https://download.pytorch.org/whl/cpu
+torch>=2.9
+sentence-transformers>=5.0
+
+# Giải mã font CFF trong một số PDF Bộ Y tế (sách Nội tiết 3879/QĐ-BYT) – extract.py chỉ bật cho trang tiếng Việt hỏng nặng
+fonttools>=4.50

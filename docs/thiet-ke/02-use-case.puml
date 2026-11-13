@@ -1,0 +1,59 @@
+@startuml 02-use-case
+!pragma layout smetana
+skinparam defaultFontName "Times New Roman"
+skinparam defaultFontSize 14
+skinparam shadowing false
+skinparam monochrome true
+left to right direction
+
+actor "Khách" as Khach
+actor "Người dùng" as ND
+actor "Quản trị viên" as QT
+actor "Google" as GG
+actor "Dịch vụ LLM" as LLM
+Khach <|-- ND
+ND <|-- QT
+
+rectangle "Hệ thống tra cứu y tế" {
+  package "Hỏi đáp" {
+    usecase "UC01 Đặt câu hỏi tra cứu" as UC01
+    usecase "UC02 Xem nguồn trích dẫn" as UC02
+  }
+  package "Tài khoản" {
+    usecase "UC03 Đăng ký tài khoản" as UC03
+    usecase "UC04 Đăng nhập" as UC04
+    usecase "UC05 Đăng xuất" as UC05
+  }
+  package "Lịch sử" {
+    usecase "UC06 Xem lịch sử hỏi đáp" as UC06
+    usecase "UC07 Xoá cuộc hỏi đáp" as UC07
+  }
+  package "Quản trị" {
+    usecase "UC08 Xem thống kê tổng quan" as UC08
+    usecase "UC09 Tra cứu nhật ký hỏi đáp" as UC09
+    usecase "UC10 Xoá nhật ký hỏi đáp" as UC10
+    usecase "UC11 Cấu hình hệ thống" as UC11
+    usecase "UC12 So sánh cấu hình" as UC12
+    usecase "UC13 Khoá / mở khoá người dùng" as UC13
+  }
+}
+
+Khach --> UC01
+Khach --> UC03
+Khach --> UC04
+UC02 .> UC01 : <<extend>>
+ND --> UC05
+ND --> UC06
+ND --> UC07
+QT --> UC08
+QT --> UC09
+QT --> UC10
+QT --> UC11
+QT --> UC12
+QT --> UC13
+UC10 .> UC09 : <<extend>>
+
+UC01 --> LLM
+UC12 --> LLM
+UC04 --> GG
+@enduml

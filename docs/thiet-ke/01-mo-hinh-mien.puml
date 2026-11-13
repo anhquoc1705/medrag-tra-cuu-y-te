@@ -1,0 +1,43 @@
+@startuml 01-mo-hinh-mien
+!pragma layout smetana
+skinparam defaultFontName "Times New Roman"
+skinparam defaultFontSize 14
+skinparam shadowing false
+skinparam monochrome true
+hide circle
+hide empty members
+
+package "Người dùng và hỏi đáp" {
+  class "Người dùng" as NguoiDung
+  class "Quản trị viên" as QuanTriVien
+  class "Hội thoại" as HoiThoai
+  class "Lượt hỏi đáp" as LuotHoiDap
+  class "Câu trả lời" as CauTraLoi
+  class "Nguồn trích dẫn" as NguonTrichDan
+  class "Kết quả kiểm soát an toàn" as KiemSoat
+  class "Nhật ký hỏi đáp" as NhatKy
+  class "Cấu hình hệ thống" as CauHinh
+}
+
+package "Kho tri thức" {
+  class "Tài liệu" as TaiLieu
+  class "Đoạn văn bản" as Doan
+  class "Cơ quan ban hành" as CoQuan
+  class "Chủ đề bệnh" as ChuDe
+}
+
+NguoiDung <|-- QuanTriVien
+NguoiDung "1" -- "0..*" HoiThoai : sở hữu >
+HoiThoai "1" *-- "1..*" LuotHoiDap
+LuotHoiDap "1" -- "1" CauTraLoi
+CauTraLoi "1" *-- "0..*" NguonTrichDan
+CauTraLoi "1" *-- "0..1" KiemSoat
+NguonTrichDan "0..*" -- "1" Doan : trỏ tới >
+LuotHoiDap "0..1" -- "1" NhatKy : ghi vào >
+NguoiDung "0..1" -- "0..*" NhatKy : (khách = ẩn danh)
+QuanTriVien "1" -- "0..*" CauHinh : cập nhật >
+
+CoQuan "1" -- "0..*" TaiLieu : ban hành >
+TaiLieu "1" *-- "1..*" Doan
+TaiLieu "0..*" -- "1..*" ChuDe : thuộc >
+@enduml

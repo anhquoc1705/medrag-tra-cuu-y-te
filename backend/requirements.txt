@@ -1,0 +1,25 @@
+# Web API
+fastapi>=0.115
+uvicorn[standard]>=0.30
+pydantic-settings>=2.4
+
+# Kết nối kho dữ liệu (client phải khớp phiên bản server trong docker-compose.yml)
+elasticsearch>=8.15,<9      # server Elasticsearch 8.15
+pymilvus>=2.5,<2.6          # server Milvus 2.5 (pymilvus 2.4.x không chạy được trên Python 3.14: grpcio cũ / pkg_resources)
+psycopg[binary]>=3.2        # PostgreSQL 16
+sqlalchemy>=2.0             # ghi log hội thoại / Guardrails
+
+# Embedding bge-m3 chạy trên CPU (torch bản CPU: pip install torch --index-url https://download.pytorch.org/whl/cpu)
+torch>=2.9
+sentence-transformers>=5.0
+
+# LLM qua LangChain: Qwen (Groq), Llama 3 (Cloudflare Workers AI), Gemini (thay GPT-4o)
+langchain-core>=1.0
+langchain-groq>=1.0
+langchain-cloudflare>=0.4
+langchain-google-genai>=4.0
+
+# Tài khoản (GĐ 8): token đăng nhập. Băm mật khẩu dùng hashlib.scrypt (thư viện chuẩn);
+# xác thực Google dùng google-auth (đã có sẵn, đi kèm langchain-google-genai).
+PyJWT>=2.9
+google-auth>=2.30

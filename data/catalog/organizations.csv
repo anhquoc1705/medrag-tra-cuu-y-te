@@ -1,0 +1,7 @@
+organization_id,name,jurisdiction,priority,raw_folder,website,note
+moh,Bộ Y tế / Cục Quản lý Khám chữa bệnh,VN,1,raw/moh,https://kcb.vn/,Văn bản pháp lý chuyên môn; ưu tiên cao nhất cho bối cảnh Việt Nam
+who,World Health Organization,INT,2,raw/who,https://iris.who.int/,Hướng dẫn quốc tế
+medlineplus,U.S. National Library of Medicine (MedlinePlus),US,3,raw/medlineplus,https://medlineplus.gov/,Thông tin phổ thông cho người bệnh
+vsh,Phân hội Tăng huyết áp Việt Nam (VSH) / Hội Tim mạch học Việt Nam (VNHA),VN,4,raw/vsh,https://pmc.ncbi.nlm.nih.gov/,Khuyến cáo hội chuyên môn (bài báo); dùng bổ sung khi Bộ Y tế chưa cập nhật
+skds,Báo Sức khỏe & Đời sống – cơ quan ngôn luận của Bộ Y tế,VN,5,raw/skds,https://suckhoedoisong.vn/,Bài phổ biến kiến thức tiếng Việt cho người dân; bổ sung cho bệnh chưa có phác đồ truy cập được; loại bài quảng cáo/tài trợ
+bvtw,Bệnh viện trung ương trực thuộc Bộ Y tế,VN,5,raw/bvtw,https://www.benhnhietdoi.vn/,"Bài kiến thức bệnh của bệnh viện tuyến trung ương (Bệnh Nhiệt đới TW, Bạch Mai…); tên bệnh viện ghi ở issuing_organization"

@@ -1,0 +1,55 @@
+@startuml 00-kien-truc-tong-the
+!pragma layout smetana
+skinparam defaultFontName "Times New Roman"
+skinparam defaultFontSize 14
+skinparam shadowing false
+skinparam monochrome true
+skinparam componentStyle rectangle
+
+actor "Người dùng /\nQuản trị viên" as U
+
+package "Giao diện (React + Vite + TypeScript)" as FE {
+  [Trang hỏi đáp] as Chat
+  [Trang quản trị] as Admin
+}
+
+package "Backend (FastAPI)" as BE {
+  [API: /chat, /auth,\n/conversations, /admin] as API
+  [Kiểm soát an toàn\n(Guardrails G1–G3)] as Guard
+  [RAG\n(dịch câu hỏi, tạo prompt,\nsinh câu trả lời)] as RAG
+  [Hybrid Search\n(BM25 + Vector + RRF)] as Search
+  [Mô hình embedding\nbge-m3 (CPU)] as Emb
+}
+
+package "Kho dữ liệu (Docker Compose)" as DB {
+  database "Elasticsearch 8.15\n(BM25)" as ES
+  database "Milvus 2.5\n(vector)" as MV
+  database "PostgreSQL 16\n(tài khoản, lịch sử, log, cấu hình)" as PG
+}
+
+cloud "Dịch vụ LLM\n(Groq: Qwen · Cloudflare: Llama 3.3\n· Google: Gemini)" as LLM
+cloud "Google OAuth" as GG
+
+package "Xử lý dữ liệu (chạy ngoại tuyến)" as PL {
+  [download → extract →\nchunk → index] as Pipe
+  folder "Tài liệu gốc\n(Bộ Y tế, WHO,\nMedlinePlus, VSH)" as Raw
+}
+
+U --> Chat
+U --> Admin
+Chat --> API : HTTP/JSON
+Admin --> API : HTTP/JSON
+API --> Guard
+API --> RAG
+API --> PG
+API ..> GG : xác thực
+RAG --> Search
+RAG --> LLM
+Guard --> LLM
+Search --> Emb
+Search --> ES
+Search --> MV
+Raw --> Pipe
+Pipe --> ES
+Pipe --> MV
+@enduml
