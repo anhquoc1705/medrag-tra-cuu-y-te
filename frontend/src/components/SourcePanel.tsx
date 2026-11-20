@@ -9,7 +9,11 @@ export function SourcePanel({ source, onClose }: { source: Source; onClose: () =
       : String(source.page_number)
     : "–";
   return (
-    <aside aria-label="Tài liệu nguồn" className="flex min-h-0 min-w-0 flex-col border-l border-line bg-surface max-[900px]:border-l-0 max-[900px]:border-t">
+    // Màn hình hẹp: cửa sổ trượt từ dưới lên, chiếm tối đa 75% chiều cao (lớp nền mờ do ChatPage vẽ).
+    <aside
+      aria-label="Tài liệu nguồn"
+      className="flex min-h-0 min-w-0 flex-col border-l border-line bg-surface max-[900px]:fixed max-[900px]:inset-x-0 max-[900px]:bottom-0 max-[900px]:z-40 max-[900px]:max-h-[75%] max-[900px]:rounded-t-2xl max-[900px]:border-l-0 max-[900px]:shadow-2xl"
+    >
       <header className="flex items-start justify-between gap-2 border-b border-line px-[18px] py-4">
         <div className="min-w-0">
           <small className="block text-[11px] uppercase tracking-[0.08em] text-muted">Nguồn [{source.n}]</small>
@@ -43,7 +47,7 @@ export function SourcePanel({ source, onClose }: { source: Source; onClose: () =
           </>
         )}
       </dl>
-      <div className="overflow-auto whitespace-pre-line px-[18px] py-4 font-serif text-[14.5px] leading-[1.7]">{source.text}</div>
+      <div className="min-h-0 overflow-auto whitespace-pre-line px-[18px] py-4 font-serif text-[14.5px] leading-[1.7]">{source.text}</div>
     </aside>
   );
 }

@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Tra cứu y tế</string>
+    <string name="title_activity_main">Tra cứu y tế</string>
+    <string name="package_name">vn.edu.ictu.medrag</string>
+    <string name="custom_url_scheme">vn.edu.ictu.medrag</string>
+</resources>

@@ -10,6 +10,19 @@ import { Logs } from "./pages/admin/Logs";
 import { Overview } from "./pages/admin/Overview";
 import { Users } from "./pages/admin/Users";
 
+// App Android: nút Back gọi window.medragBack (MainActivity.java). Mặc định: ở trang khác "/" thì quay lại trang trước;
+// trang hỏi đáp tự đặt hàm riêng (đóng ngăn nguồn / menu / hộp đăng nhập). Trả false = để app thoát.
+declare global {
+  interface Window {
+    medragBack?: () => boolean;
+  }
+}
+window.medragBack = () => {
+  if (window.location.pathname === "/") return false;
+  window.history.back();
+  return true;
+};
+
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <AuthProvider>

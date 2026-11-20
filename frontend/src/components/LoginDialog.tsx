@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
-import { api } from "../api";
+import { api, isNativeApp } from "../api";
 import { useAuth } from "../auth";
 import type { User } from "../types";
 import { GoogleButton } from "./GoogleButton";
@@ -70,7 +70,12 @@ export function LoginDialog({ open, onClose, title = "Đăng nhập hoặc đăn
     e.preventDefault();
     run(async () => {
       const r = await api<{ exists: boolean; has_password: boolean }>("/auth/check-email", { body: { email } });
-      if (r.exists && !r.has_password) throw new Error("Email này đã đăng ký bằng Google – hãy bấm “Tiếp tục với Google”.");
+      if (r.exists && !r.has_password)
+        throw new Error(
+          isNativeApp
+            ? "Email này đã đăng ký bằng Google – trong app chỉ đăng nhập được bằng email/mật khẩu; hãy dùng bản web hoặc email khác."
+            : "Email này đã đăng ký bằng Google – hãy bấm “Tiếp tục với Google”.",
+        );
       setStep(r.exists ? "password" : "register");
     });
   };
@@ -116,7 +121,8 @@ export function LoginDialog({ open, onClose, title = "Đăng nhập hoặc đăn
               {title}
             </h2>
             <p className="mb-2 text-center text-sm text-balance text-muted">Lưu lại các cuộc hỏi đáp và xem lại trên mọi thiết bị.</p>
-            {clientId && (
+            {/* App Android: Google chặn đăng nhập trong WebView ("disallowed_useragent") → chỉ dùng email/mật khẩu */}
+            {clientId && !isNativeApp && (
               <>
                 <GoogleButton clientId={clientId} onCredential={onGoogle} onError={setError} />
                 <div className="my-1 flex items-center gap-3 text-xs tracking-widest text-muted before:flex-1 before:border-t before:border-line after:flex-1 after:border-t after:border-line">

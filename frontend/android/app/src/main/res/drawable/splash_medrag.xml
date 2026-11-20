@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Màn hình chờ khi mở app (Android < 12; Android 12+ tự dùng biểu tượng app): nền giống bản web + biểu tượng ở giữa. -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:drawable="@color/splash_background" />
+    <item
+        android:width="96dp"
+        android:height="96dp"
+        android:gravity="center">
+        <shape android:shape="rectangle">
+            <corners android:radius="24dp" />
+            <solid android:color="#1D6B62" />
+        </shape>
+    </item>
+    <item
+        android:width="96dp"
+        android:height="96dp"
+        android:gravity="center"
+        android:drawable="@drawable/ic_medrag_foreground" />
+</layer-list>

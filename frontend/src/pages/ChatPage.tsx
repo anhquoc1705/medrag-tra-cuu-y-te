@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
 import { Link } from "react-router-dom";
-import { api } from "../api";
+import { api, isNativeApp, serverStore } from "../api";
 import { useAuth } from "../auth";
 import { AnswerCard } from "../components/AnswerCard";
 import { LoginDialog } from "../components/LoginDialog";
@@ -74,6 +74,8 @@ export function ChatPage() {
   const [loadingConv, setLoadingConv] = useState(false);
   const [draft, setDraft] = useState("");
   const [topics, setTopics] = useState<string[]>([]);
+  const [menuOpen, setMenuOpen] = useState(false); // menu trượt trên màn hình hẹp
+  const narrow = window.matchMedia("(max-width: 900px)").matches; // gợi ý ngắn trong ô nhập để không bị xuống dòng
   const threadEnd = useRef<HTMLDivElement>(null);
 
   // Danh sách bệnh hệ thống hỗ trợ – lấy từ backend (data/catalog/topics.csv), không viết cứng ở giao diện.
@@ -109,6 +111,24 @@ export function ChatPage() {
     const done = Object.fromEntries(Object.entries(turns).map(([k, v]) => [k, v.filter((t) => t.result)]));
     saveGuest({ convs: convs.filter((c) => done[c.id]?.length), turns: done });
   }, [convs, turns, user, loading]);
+
+  // App Android – nút Back: đóng lần lượt ngăn nguồn → menu → hộp đăng nhập; không còn gì để đóng thì thoát app.
+  const backState = useRef({ source, menuOpen, loginOpen });
+  backState.current = { source, menuOpen, loginOpen };
+  useEffect(() => {
+    const previous = window.medragBack;
+    window.medragBack = () => {
+      const s = backState.current;
+      if (s.source) setSource(null);
+      else if (s.menuOpen) setMenuOpen(false);
+      else if (s.loginOpen) setLoginOpen(false);
+      else return false;
+      return true;
+    };
+    return () => {
+      window.medragBack = previous;
+    };
+  }, []);
 
   const activeTurns = useMemo(() => (activeId ? turns[activeId] ?? [] : []), [activeId, turns]);
   const activeConv = convs.find((c) => c.id === activeId);
@@ -188,16 +208,43 @@ export function ChatPage() {
 
   const openSource = source && activeTurns.find((t) => t.id === source.turnId)?.result?.sources.find((s) => s.n === source.n);
 
+  // App Android: đổi địa chỉ backend ngay trong app (vd. sau khi đưa lên đám mây), không cần build lại.
+  function changeServer() {
+    const value = window.prompt("Địa chỉ máy chủ (backend), ví dụ https://ten-may-chu.duckdns.org\nĐể trống = dùng địa chỉ mặc định.", serverStore.get());
+    if (value === null) return;
+    try {
+      serverStore.set(value);
+      window.location.reload();
+    } catch {
+      window.alert("Địa chỉ không hợp lệ.");
+    }
+  }
+
   return (
-    <div className={`grid h-full max-[900px]:h-auto max-[900px]:min-h-full max-[900px]:grid-cols-1 ${openSource ? "grid-cols-[264px_minmax(0,1fr)_360px]" : "grid-cols-[264px_minmax(0,1fr)]"}`}>
+    // Màn hình hẹp (điện thoại, app Android): thanh trái thành menu trượt (nút ☰), ngăn nguồn thành cửa sổ trượt từ dưới lên.
+    <div className={`grid h-full max-[900px]:grid-cols-1 ${openSource ? "grid-cols-[264px_minmax(0,1fr)_360px]" : "grid-cols-[264px_minmax(0,1fr)]"}`}>
+      {(menuOpen || openSource) && (
+        <div
+          aria-hidden="true"
+          onClick={() => {
+            setMenuOpen(false);
+            setSource(null);
+          }}
+          className="fixed inset-0 z-30 bg-black/40 min-[901px]:hidden"
+        />
+      )}
       {/* thanh trái */}
-      <nav aria-label="Điều hướng" className="flex min-h-0 min-w-0 flex-col gap-5 border-r border-line bg-surface px-4 pt-6 max-[900px]:gap-3 max-[900px]:border-b max-[900px]:border-r-0">
+      <nav
+        aria-label="Điều hướng"
+        className={`flex min-h-0 min-w-0 flex-col gap-5 border-r border-line bg-surface px-4 pt-6 max-[900px]:fixed max-[900px]:inset-y-0 max-[900px]:left-0 max-[900px]:z-40 max-[900px]:w-[min(300px,85vw)] max-[900px]:shadow-2xl max-[900px]:transition-[translate,visibility] ${menuOpen ? "" : "max-[900px]:invisible max-[900px]:-translate-x-full"}`}
+      >
         <Brand subtitle="Trợ lý thông tin y tế" />
         <button
           type="button"
           onClick={() => {
             setActiveId(null);
             setSource(null);
+            setMenuOpen(false);
           }}
           className="flex items-center justify-center gap-2 rounded-xl border border-pine/30 bg-pine-soft px-3 py-3 text-[15px] font-semibold text-pine hover:border-pine"
         >
@@ -207,7 +254,7 @@ export function ChatPage() {
           Cuộc hỏi đáp mới
         </button>
 
-        <div className="flex min-h-0 flex-1 flex-col gap-1 overflow-auto max-[900px]:max-h-40">
+        <div className="flex min-h-0 flex-1 flex-col gap-1 overflow-auto">
           <h3 className="mb-1 ml-1 text-xs font-semibold uppercase tracking-[0.08em] text-muted">{user ? "Lịch sử" : "Cuộc trò chuyện"}</h3>
           {listError && <ErrorNote>{listError}</ErrorNote>}
           {convs.map((c) => (
@@ -219,7 +266,10 @@ export function ChatPage() {
                 type="button"
                 title={c.title}
                 aria-current={c.id === activeId}
-                onClick={() => openConv(c)}
+                onClick={() => {
+                  openConv(c);
+                  setMenuOpen(false);
+                }}
                 className="flex min-w-0 flex-1 items-center gap-2.5 px-2.5 py-2 text-left text-[14px]"
               >
                 <ChatIcon className="size-[18px] text-muted" />
@@ -229,7 +279,7 @@ export function ChatPage() {
                 type="button"
                 aria-label={`Xoá “${c.title}”`}
                 onClick={() => deleteConv(c)}
-                className="px-2 text-muted opacity-0 hover:text-danger focus-visible:opacity-100 group-hover:opacity-100"
+                className="px-2 text-muted opacity-0 hover:text-danger focus-visible:opacity-100 group-hover:opacity-100 max-[900px]:px-3 max-[900px]:text-lg max-[900px]:opacity-100"
               >
                 ×
               </button>
@@ -251,6 +301,11 @@ export function ChatPage() {
             </span>
             <span aria-hidden="true">→</span>
           </Link>
+        )}
+        {isNativeApp && (
+          <button type="button" onClick={changeServer} className="-mb-2 min-w-0 text-left text-[12.5px] text-muted">
+            Máy chủ: <span className="break-all font-mono">{serverStore.get().replace(/^https?:\/\//, "")}</span> · <u>Đổi</u>
+          </button>
         )}
         <div className="-mx-4 flex min-w-0 items-center gap-3 border-t border-line px-4 py-4">
           {user ? (
@@ -280,7 +335,20 @@ export function ChatPage() {
       {/* khung hỏi đáp */}
       <main className="flex min-h-0 min-w-0 flex-col">
         <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 border-b border-line bg-paper px-7 py-3.5 max-[900px]:px-4">
-          <h1 className="min-w-0 truncate text-lg font-semibold tracking-tight">{activeConv?.title ?? "Cuộc hỏi đáp mới"}</h1>
+          <div className="flex min-w-0 items-center gap-2">
+            <button
+              type="button"
+              aria-label="Mở menu"
+              aria-expanded={menuOpen}
+              onClick={() => setMenuOpen(true)}
+              className="-ml-1.5 rounded-lg p-1.5 text-ink hover:bg-user min-[901px]:hidden"
+            >
+              <svg viewBox="0 0 20 20" aria-hidden="true" className="size-6 fill-none stroke-current" strokeWidth={1.8} strokeLinecap="round">
+                <path d="M3.5 5.5h13M3.5 10h13M3.5 14.5h13" />
+              </svg>
+            </button>
+            <h1 className="min-w-0 truncate text-lg font-semibold tracking-tight">{activeConv?.title ?? "Cuộc hỏi đáp mới"}</h1>
+          </div>
           {!loading && <SavePill saved={!!user} />}
         </div>
 
@@ -345,7 +413,7 @@ export function ChatPage() {
           <form onSubmit={onSubmit} className="mx-auto flex max-w-[720px] gap-2">
             <textarea
               aria-label="Câu hỏi"
-              placeholder="Hỏi về một bệnh, ví dụ: tiểu đường, huyết áp, hen, viêm gan…"
+              placeholder={narrow ? "Hỏi về một bệnh…" : "Hỏi về một bệnh, ví dụ: tiểu đường, huyết áp, hen, viêm gan…"}
               maxLength={1000}
               value={draft}
               onChange={(e) => setDraft(e.target.value)}
