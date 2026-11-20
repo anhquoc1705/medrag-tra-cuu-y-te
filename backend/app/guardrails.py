@@ -160,8 +160,16 @@ def _error_text(e: Exception) -> str:
     """
     resp = getattr(e, "response", None)
     if resp is not None and hasattr(resp, "status_code"):
-        return f"{type(e).__name__} {resp.status_code}: {resp.text[:200]}"
-    return f"{type(e).__name__}: {e}"[:250]
+        full = f"{type(e).__name__} {resp.status_code}: {resp.text}"
+        short = f"{type(e).__name__} {resp.status_code}: {resp.text[:200]}"
+    else:
+        full = f"{type(e).__name__}: {e}"
+        short = full[:250]
+    # 14/11: lỗi 429 của Gemini có "…PerDay…" nằm sau ký tự 250 → bị cắt mất, script không nhận ra hết hạn mức ngày
+    marker = next((m for m in _DAILY_QUOTA if m in full), None)
+    if marker and marker not in short:
+        short += f" … [{marker}]"
+    return short
 
 
 # Dấu hiệu hết hạn mức THEO NGÀY (chờ vài giây không giải quyết được): Groq TPD, Cloudflare neuron, Gemini RPD.
@@ -177,12 +185,17 @@ def verifier_candidates(answer_provider: str | None) -> list[tuple[str, str | No
 
     Bình thường chỉ có GUARD_VERIFIER_PROVIDER. Nếu LLM trả lời trùng bên kiểm tra (vd. cấu hình Llama 3 trên Cloudflare)
     thì dùng GUARD_VERIFIER_ALTERNATES (SV chọn 13/11/2026: Qwen trước, hết hạn mức ngày thì Gemini) – không để LLM tự chấm bài.
+    Mỗi mục là "nhà_cung_cấp" hoặc "nhà_cung_cấp:mô_hình" (14/11: hết Gemini 3.8 Flash thì sang gemini-3.5-flash-lite).
     """
     s = get_settings()
     if answer_provider != s.guard_verifier_provider:
         return [(s.guard_verifier_provider, s.guard_verifier_model or None)]
-    alternates = [p.strip() for p in s.guard_verifier_alternates.split(",") if p.strip()]
-    return [(p, None) for p in alternates if p != answer_provider]
+    out = []
+    for item in (p.strip() for p in s.guard_verifier_alternates.split(",")):
+        provider, _, model = item.partition(":")
+        if provider and provider != answer_provider:
+            out.append((provider, model or None))
+    return out
 
 
 def verify_answer(answer: str, sources: list[dict], answer_provider: str | None = None) -> dict:
@@ -204,7 +217,7 @@ def verify_answer(answer: str, sources: list[dict], answer_provider: str | None 
                 raw = generate(messages, provider, model, max_tokens=1500)
                 verdicts = json.loads(raw[raw.find("["): raw.rfind("]") + 1])
                 by_index = {int(v.get("claim", 0)): v for v in verdicts if isinstance(v, dict)}
-                verifier = provider
+                verifier = f"{provider}:{model}" if model else provider
                 break
             except Exception as e:  # noqa: BLE001
                 last_error = e
@@ -216,7 +229,7 @@ def verify_answer(answer: str, sources: list[dict], answer_provider: str | None 
     if by_index is None:
         # Không kiểm chứng được thì KHÔNG coi là an toàn – nhưng đánh dấu là lỗi hệ thống (không phải câu trả lời sai).
         return {"faithfulness": None, "claims": claims, "unsupported": [], "infra_error": True,
-                "verifier": None, "error": f"lỗi kiểm tra chéo ({', '.join(p for p, _ in candidates)}): {_error_text(last_error)}"}
+                "verifier": None, "error": f"lỗi kiểm tra chéo ({', '.join(p + (':' + m if m else '') for p, m in candidates)}):{_error_text(last_error)}"}
     for i, c in enumerate(claims, start=1):
         v = by_index.get(i, {})
         c["supported"] = bool(v.get("supported", False))

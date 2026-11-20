@@ -74,8 +74,11 @@ def get_llm(provider: str | None = None, model: str | None = None, max_tokens: i
 
     if not s.gemini_api_key:
         raise ValueError("Thiếu GEMINI_API_KEY trong .env")
+    # Tắt/giảm "suy nghĩ" cho nhanh. 14/11: gemini-3.5-flash-lite báo 400 INVALID_ARGUMENT với thinking_budget=0,
+    # nhận thinking_level="minimal"; gemini-3.8-flash vẫn dùng thinking_budget=0 như cũ.
+    thinking = {"thinking_level": "minimal"} if "flash-lite" in model else {"thinking_budget": 0}
     return ChatGoogleGenerativeAI(model=model, google_api_key=s.gemini_api_key, temperature=s.llm_temperature,
-                                  max_output_tokens=max_tokens, thinking_budget=0, max_retries=2, timeout=TIMEOUT)
+                                  max_output_tokens=max_tokens, max_retries=2, timeout=TIMEOUT, **thinking)
 
 
 # Cùng mô hình ở nhà cung cấp khác – dùng khi nhà cung cấp chính hết hạn mức (Groq miễn phí: 200.000 token/ngày).

@@ -90,10 +90,11 @@ def wait_for_budget(budget: int, need: int) -> None:
         time.sleep(3)
 
 
-def run_one(question: dict, config: str, max_retries: int, provider: str | None = None) -> dict:
+def run_one(question: dict, config: str, max_retries: int, provider: str | None = None,
+            model: str | None = None) -> dict:
     for attempt in range(max_retries + 1):
         try:
-            r = answer(question["question"], config, provider)
+            r = answer(question["question"], config, provider, model)
             guard = r.get("guard") or {}
             infra = guard.get("decision") == "verify_error"  # lỗi hệ thống, không phải kết quả → chạy lại sau
             infra_text = " ".join(str(a.get("error", "")) for a in guard.get("attempts") or [])
@@ -158,6 +159,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--configs", nargs="+", default=["hybrid_rag", "hybrid_rag_guard"])
     parser.add_argument("--ids", nargs="*", help="chỉ chạy các câu này")
+    parser.add_argument("--ids-file", help="file danh sách mã câu (mỗi dòng một mã, # là ghi chú), vd. eval/test50_ids.txt – bộ 50 câu test của GĐ 9")
     parser.add_argument("--split", choices=["dev", "test"], help="chỉ chạy bộ dev (tinh chỉnh) hoặc test (chấm điểm cuối)")
     parser.add_argument("--resume", action="store_true", help="chạy tiếp lần chạy gần nhất (hoặc file --out)")
     parser.add_argument("--out", help="tên file kết quả trong eval/results (ví dụ guard_sau_tinh_chinh.jsonl)")
@@ -169,6 +171,8 @@ def main() -> int:
     parser.add_argument("--provider", choices=["groq", "cloudflare", "gemini"],
                         help="LLM trả lời: groq (Qwen) | cloudflare (Llama 3) | gemini; trống = LLM_PROVIDER. "
                              "Mỗi nhà cung cấp nên ghi ra một file --out riêng để chạy song song")
+    parser.add_argument("--model", help="mô hình của LLM trả lời, vd. gemini-3.5-flash-lite; trống = mặc định của nhà cung cấp "
+                                        "(GĐ 9: mỗi mô hình ghi một file --out riêng)")
     parser.add_argument("--hedge", action="store_true", help="bật lại yêu cầu dự phòng (mặc định tắt khi đánh giá)")
     parser.add_argument("--allow-fallback", action="store_true",
                         help="cho phép chuyển Qwen sang Cloudflare khi Groq hết hạn mức (mặc định tắt khi đánh giá)")
@@ -198,6 +202,10 @@ def main() -> int:
             f.write(json.dumps(r, ensure_ascii=False) + "\n")
 
     questions = [json.loads(line) for line in QUESTIONS.open(encoding="utf-8") if line.strip()]
+    if args.ids_file:
+        wanted = {line.strip() for line in (ROOT / args.ids_file).read_text(encoding="utf-8").splitlines()
+                  if line.strip() and not line.startswith("#")}
+        questions = [q for q in questions if q["id"] in wanted]
     if args.ids:
         questions = [q for q in questions if q["id"] in args.ids]
     if args.split:
@@ -212,7 +220,7 @@ def main() -> int:
         wait_for_budget(args.token_budget, per_question.get(config, 4000))
         while True:
             try:
-                record = run_one(q, config, args.max_retries, args.provider)
+                record = run_one(q, config, args.max_retries, args.provider, args.model)
                 break
             except DailyLimit as e:
                 # Hạn mức Groq tính trong 24 giờ trượt: nếu chỉ phải chờ ngắn thì ngủ rồi chạy tiếp câu này.

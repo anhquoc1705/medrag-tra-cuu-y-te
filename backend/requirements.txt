@@ -23,3 +23,9 @@ langchain-google-genai>=4.0
 # xác thực Google dùng google-auth (đã có sẵn, đi kèm langchain-google-genai).
 PyJWT>=2.9
 google-auth>=2.30
+
+# Chỉ cho đánh giá GĐ 9 (eval/ragas_eval.py), máy chủ web không cần. Python 3.14 / Windows: scikit-network
+# (ragas dùng cho sinh bộ câu hỏi) chưa có bản dựng sẵn → cài tay, KHÔNG để pip tự kéo:
+#   pip install "instructor>=1.10" openai langchain-openai langchain-community langchain "datasets>=4.0.0" \
+#       diskcache appdirs nest-asyncio tiktoken pillow networkx rich typer
+#   pip install --no-deps ragas==0.4.4

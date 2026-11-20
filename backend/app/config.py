@@ -61,7 +61,9 @@ class Settings(BaseSettings):
     guard_classifier_provider: str = ""   # LLM phân loại câu hỏi; trống = LLM_PROVIDER
     guard_verifier_provider: str = "cloudflare"  # LLM kiểm tra chéo – KHÁC LLM trả lời để không "tự chấm bài"
     guard_verifier_model: str = ""
-    guard_verifier_alternates: str = "groq,gemini"  # khi LLM trả lời trùng bên kiểm tra: thử lần lượt (hết hạn mức ngày → bên sau)
+    # khi LLM trả lời trùng bên kiểm tra: thử lần lượt (hết hạn mức ngày → bên sau); "nhà_cung_cấp:mô_hình" để chọn mô hình
+    # 15/11: bỏ gemini-3.8-flash (quá tải 503/504 liên tục, 20 lượt/ngày) – Gemini chỉ dùng 3.5 Flash-Lite
+    guard_verifier_alternates: str = "groq,gemini:gemini-3.5-flash-lite"
     guard_prompt_guard_model: str = "meta-llama/llama-prompt-guard-2-86m"  # chạy trên Groq
     guard_prompt_guard_threshold: float = 0.5
     guard_min_evidence: float = 0.5       # điểm cosine (bge-m3) cao nhất của tài liệu tìm được; thấp hơn = không có bằng chứng
